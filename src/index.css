@@ -1,0 +1,27 @@
+:root {
+  font-family: 'Nunito', 'Segoe UI', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+  color: #3f2104;
+  background: linear-gradient(180deg, #ffe7d4 0%, #fff6ea 65%);
+  min-height: 100%;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  background: linear-gradient(180deg, #ffe7d4 0%, #fff6ea 65%);
+  display: flex;
+  justify-content: center;
+  padding: 1rem;
+}
+
+#root {
+  width: 100%;
+}
+
+button {
+  font-family: inherit;
+}
