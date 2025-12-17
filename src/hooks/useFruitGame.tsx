@@ -13,16 +13,25 @@ import {
   CANVAS_HEIGHT,
   CANVAS_WIDTH,
   FAIL_LINE,
+  FRUIT_POINTS,
   FRUITS,
   SPAWN_GUTTER,
   clamp,
   randomSpawnTier,
 } from '../game/constants'
+import { renderFruit } from '../game/fruitRenderer'
 
 type FruitInstance = {
   body: Body
   tier: number
   hasClearedSpawn: boolean
+}
+
+type BurstEffect = {
+  x: number
+  y: number
+  created: number
+  duration: number
 }
 
 export function useFruitGame() {
@@ -34,6 +43,7 @@ export function useFruitGame() {
   const mergingRef = useRef<Set<number>>(new Set())
   const gameOverRef = useRef(false)
   const lastFrameRef = useRef<number | null>(null)
+  const burstsRef = useRef<BurstEffect[]>([])
 
   const [score, setScore] = useState(0)
   const [currentTier, setCurrentTier] = useState(randomSpawnTier)
@@ -190,7 +200,38 @@ export function useFruitGame() {
     )
     World.add(world, [ground, leftWall, rightWall])
 
+    const drawBurst = (effect: BurstEffect, progress: number) => {
+      const alpha = 1 - progress
+      const ringRadius = 20 + progress * 60
+      ctx.save()
+      ctx.translate(effect.x, effect.y)
+      ctx.globalAlpha = alpha
+      ctx.lineWidth = 6 * (1 - progress * 0.7)
+      ctx.strokeStyle = 'rgba(255,255,255,0.8)'
+      ctx.beginPath()
+      ctx.arc(0, 0, ringRadius, 0, Math.PI * 2)
+      ctx.stroke()
+
+      const particleCount = 8
+      for (let i = 0; i < particleCount; i += 1) {
+        const angle = (Math.PI * 2 * i) / particleCount
+        const distance = ringRadius + progress * 10
+        ctx.beginPath()
+        ctx.fillStyle = `rgba(255,255,255,${0.6 * alpha})`
+        ctx.arc(
+          Math.cos(angle) * distance,
+          Math.sin(angle) * distance,
+          6 * (1 - progress),
+          0,
+          Math.PI * 2
+        )
+        ctx.fill()
+      }
+      ctx.restore()
+    }
+
     const drawWorld = () => {
+      const now = performance.now()
       ctx.clearRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT)
       const gradient = ctx.createLinearGradient(0, 0, 0, CANVAS_HEIGHT)
       gradient.addColorStop(0, '#ffe9d6')
@@ -212,17 +253,7 @@ export function useFruitGame() {
       fruitsRef.current.forEach((entry) => {
         const { body, tier } = entry
         const fruit = FRUITS[tier]
-        ctx.save()
-        ctx.translate(body.position.x, body.position.y)
-        ctx.rotate(body.angle)
-        ctx.fillStyle = fruit.color
-        ctx.beginPath()
-        ctx.arc(0, 0, fruit.radius, 0, Math.PI * 2)
-        ctx.fill()
-        ctx.lineWidth = 3
-        ctx.strokeStyle = 'rgba(255,255,255,0.5)'
-        ctx.stroke()
-        ctx.restore()
+        renderFruit(ctx, fruit, body)
 
         if (
           !entry.hasClearedSpawn &&
@@ -234,6 +265,15 @@ export function useFruitGame() {
         if (entry.hasClearedSpawn && body.position.y - fruit.radius <= FAIL_LINE) {
           shouldLose = true
         }
+      })
+
+      burstsRef.current = burstsRef.current.filter((burst) => {
+        const progress = (now - burst.created) / burst.duration
+        if (progress >= 1) {
+          return false
+        }
+        drawBurst(burst, progress)
+        return true
       })
 
       if (shouldLose && !gameOverRef.current) {
@@ -251,13 +291,13 @@ export function useFruitGame() {
         if (!fruitA || !fruitB) return
         if (!fruitA.hasClearedSpawn || !fruitB.hasClearedSpawn) return
         if (fruitA.tier !== fruitB.tier) return
-        if (fruitA.tier >= FRUITS.length - 1) return
         if (mergingRef.current.has(bodyA.id) || mergingRef.current.has(bodyB.id)) return
 
         mergingRef.current.add(bodyA.id)
         mergingRef.current.add(bodyB.id)
 
         const nextTier = fruitA.tier + 1
+        const isFinalTier = fruitA.tier >= FRUITS.length - 1
         const newX = (bodyA.position.x + bodyB.position.x) / 2
         const newY = (bodyA.position.y + bodyB.position.y) / 2
         const mergedVelocity = {
@@ -272,8 +312,18 @@ export function useFruitGame() {
         mergingRef.current.delete(bodyA.id)
         mergingRef.current.delete(bodyB.id)
 
-        spawnFruit(nextTier, { x: newX, y: newY }, mergedVelocity, { settled: true })
-        setScore((value) => value + 1)
+        if (isFinalTier) {
+          burstsRef.current.push({
+            x: newX,
+            y: newY,
+            created: performance.now(),
+            duration: 800,
+          })
+        } else {
+          spawnFruit(nextTier, { x: newX, y: newY }, mergedVelocity, { settled: true })
+        }
+        const awardPoints = FRUIT_POINTS[fruitA.tier] ?? fruitA.tier + 1
+        setScore((value) => value + awardPoints)
       })
     }
 
@@ -299,6 +349,7 @@ export function useFruitGame() {
       Engine.clear(engine)
       fruitsRef.current.clear()
       mergingRef.current.clear()
+      burstsRef.current = []
     }
   }, [spawnFruit])
 
