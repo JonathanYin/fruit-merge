@@ -11,8 +11,9 @@
 
 .hud {
   display: flex;
-  justify-content: space-between;
-  gap: 1rem;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 1.5rem;
   padding: 1rem 1.25rem;
   border-radius: 24px;
   background: rgba(255, 255, 255, 0.8);
@@ -39,15 +40,11 @@
   line-height: 1;
 }
 
-.score-block {
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-}
-
 .hud-previews {
   display: flex;
   gap: 1rem;
+  margin-left: auto;
+  margin-right: 0.5rem;
 }
 
 .fruit-preview {
@@ -163,6 +160,10 @@
   transition: transform 150ms ease, box-shadow 150ms ease;
 }
 
+.hud-restart {
+  flex-shrink: 0;
+}
+
 .restart-button:active {
   transform: translateY(1px);
   box-shadow: 0 6px 12px rgba(255, 94, 98, 0.45);
@@ -175,18 +176,74 @@
   line-height: 1.6;
 }
 
+.fruit-hierarchy {
+  padding: 0.9rem 1rem;
+  border-radius: 16px;
+  border: 1px solid rgba(255, 153, 102, 0.25);
+  background: radial-gradient(circle at top left, rgba(255, 255, 255, 0.9), #fff5eb);
+}
+
+.fruit-hierarchy-label {
+  margin: 0 0 0.35rem;
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #c98241;
+}
+
+.fruit-hierarchy-description {
+  margin: 0 0 0.4rem;
+  font-size: 0.9rem;
+  color: #885631;
+}
+
+.fruit-hierarchy-track {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.7rem;
+}
+
+.fruit-hierarchy-entry {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  color: #5d350f;
+  font-size: 0.88rem;
+}
+
+.fruit-symbol {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: 3px solid rgba(255, 255, 255, 0.9);
+  box-shadow: 0 5px 12px rgba(0, 0, 0, 0.15);
+}
+
+.fruit-symbol-name {
+  font-weight: 600;
+}
+
+.fruit-hierarchy-arrow {
+  font-weight: 700;
+  color: #d07a37;
+  margin-left: 0.1rem;
+}
+
 @media (max-width: 640px) {
   .hud {
     flex-direction: column;
     align-items: stretch;
   }
 
-  .score-block {
-    flex-direction: column;
-    align-items: flex-start;
+  .hud-previews {
+    width: 100%;
+    justify-content: space-between;
+    margin: 0;
   }
 
-  .hud-previews {
-    justify-content: space-between;
+  .hud-restart {
+    width: 100%;
+    text-align: center;
   }
 }
